@@ -1,5 +1,7 @@
 
-from flask import Flask, request
+
+from bson import ObjectId
+from flask import Flask, request, abort
 import json
 from mock_data import mock_catalog
 from config import db
@@ -76,31 +78,37 @@ def get_total():
 
 @app.route("/api/products/<id>")
 def find_product(id):
-    for prod in mock_catalog:
-        if id == prod["_id"]:
-            return json.dumps(prod) 
+    prod = db.products.find_one({"_id": ObjectId(id)})
+
+    prod["_id"] = str(prod["_id"]) 
+
+    return json.dumps(prod)
 
 
 @app.route("/api/products/category")
 def get_catagories():
-    catagories = []
+    cursor= db.products.find({})
+    catagories = []  
+    
 
-    for prod in mock_catalog:
+    for prod in cursor:
         cat = prod["category"]
         if not cat in catagories:
             catagories.append(cat)
 
+    catagories["_id"] = str(catagories["_id"]) 
     return json.dumps(catagories)
 
 @app.route("/api/products/category/<cat_name>")
 
 def get_title(cat_name):
+    cursor= db.products.find({"category": cat_name})
     results = []
 
-    for prod in mock_catalog:
+    for prod in cursor:
         if prod["category"].lower() == cat_name.lower() :
             results.append(prod)
-
+    prod["_id"] = str(prod["_id"]) 
     return json.dumps(results)    
 
 @app.route("/api/products/search/<text>")
@@ -115,6 +123,46 @@ def search_by_text(text):
 
     return json.dumps(results)
 
+@app.get("/api/couponCodes")
+def get_coupon():
+
+    cursor= db.couponCodes.find({})
+    results= []
+
+    for code in cursor:
+        code["_id"] = str(code["_id"]) 
+        results.append(code)
+        
+    return json.dumps(results)
+
+@app.get("/api/couponCodes/<code>")
+def get_by_code_coupon(code):
+
+    coupon = db.couponCodes.find_one({"code": code})
+    if not coupon:
+        return abort(400, "Invalid coupon code")
+
+    
+    code["_id"] = str(code["_id"]) 
+    return json.dumps(coupon)
+
+
+@app.route("/api/couponCodes", methods=["post"])
+def save_coupon():
+    coupon = request.get_json()
+
+    if not "code" in coupon or len(coupon["code"]) < 5:
+        return abort(400, "Code is required and should contains at least 5 chars.")
+
+    if not "discount" in coupon or type(coupon["discount"]) != type(int) or type(coupon["discount"]) != type(float):
+        return abort(400, "Discount is required and should a valid number.")
+
+    if coupon < 0 or len(coupon["discount"]) > 31:
+        return abort(400, "Discount should be lower than 31.")
+
+    db.couponCode.insert_one(coupon)
+    coupon["_id"] = str(coupon["_id"])
+    return json.dumps(coupon)
 
 
 app.run(debug=True)

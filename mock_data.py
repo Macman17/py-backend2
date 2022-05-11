@@ -5,6 +5,7 @@ mock_catalog = [
         "category": "1",
         "unitPrice": 3.44,
         "image": "pic1.jpg"
+        
     },
     {
         "_id": "65464",
@@ -12,6 +13,7 @@ mock_catalog = [
         "category": "2",
         "unitPrice": 5.32,
         "image": "pic2.jpg"
+        
     },
     {
         "_id": "54343",
@@ -19,6 +21,7 @@ mock_catalog = [
         "category": "3",
         "unitPrice": 7.00,
         "image": "pic3.jpg"
+        
     },
     {
         "_id": "35435",
@@ -26,6 +29,7 @@ mock_catalog = [
         "category": "4",
         "unitPrice": 5.01,
         "image": "pic4.jpg"
+        
     }
 
 ]
