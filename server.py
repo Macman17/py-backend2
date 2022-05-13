@@ -1,19 +1,17 @@
 
 
+from itertools import product
 from bson import ObjectId
 from flask import Flask, request, abort
 import json
 from mock_data import mock_catalog
 from config import db
+from flask_cors import CORS
 
 app = Flask('server')
+CORS(app) #disable CORS
 
-
-@app.route("/")
-def root():
-    return "Welcome to the root page"
-
-
+#about Section
 @app.route("/api/about")
 def about():
     me = {
@@ -22,7 +20,7 @@ def about():
     }
     return json.dumps(me)  # parse into json, then return
 
-
+#Catalog Section
 @app.route("/api/catalog")
 def get_catalog():
     cursor = db.products.find({}) #get all
@@ -35,10 +33,32 @@ def get_catalog():
     return json.dumps(all_products)    
 
 
-@app.route("/api/catalog", methods=["post"])
+@app.post("/api/catalog")
 def save_product():
     product = request.get_json()
     db.products.insert_one(product)
+
+    if not "title" in product or len(product["title"]) < 5:
+        return abort(400, "Title should contains at least 5 chars.")
+
+    if not "unitPrice" in product:
+        return abort(400, "Price is required.")    
+
+    if not type(product["unitPrice"]) != float and type(product["unitPrice"]) != int:
+        return abort(400, "Must be a valid number.")
+
+    if product["unitPrice"] <= 0:
+        return abort(400, "Must be higher than 0.")
+
+    if not "image" in product or len(product["image"]) < 1:
+        return abort(400, "Image is required.")
+
+    if not "category" in product or len(product["category"]) < 1:
+        return abort(400, "Category is required.")   
+
+    if not type(product["category"]) not in [type(float),type(int)]:
+        return abort(400, "number is with category required.")                
+
 
     print("Product saved!")
     print(product)
@@ -73,12 +93,17 @@ def get_total():
     for prod in db_prod:
         total += prod["unitPrice"]
 
-    
     return json.dumps(total) 
 
+#Product Section
 @app.route("/api/products/<id>")
 def find_product(id):
     prod = db.products.find_one({"_id": ObjectId(id)})
+
+
+    
+    if not ObjectId.is_valid(id):
+        return abort(400, "ObjectId is not an ID.") 
 
     prod["_id"] = str(prod["_id"]) 
 
@@ -123,6 +148,9 @@ def search_by_text(text):
 
     return json.dumps(results)
 
+#Coupon Code Section
+
+#Get Coupon Codes
 @app.get("/api/couponCodes")
 def get_coupon():
 
@@ -135,6 +163,7 @@ def get_coupon():
         
     return json.dumps(results)
 
+#Valid Coupon codes
 @app.get("/api/couponCodes/<code>")
 def get_by_code_coupon(code):
 
@@ -146,18 +175,21 @@ def get_by_code_coupon(code):
     code["_id"] = str(code["_id"]) 
     return json.dumps(coupon)
 
-
+#Post Coupon Code
 @app.route("/api/couponCodes", methods=["post"])
 def save_coupon():
     coupon = request.get_json()
 
     if not "code" in coupon or len(coupon["code"]) < 5:
         return abort(400, "Code is required and should contains at least 5 chars.")
+    
+    if not "discount" in coupon:
+        return abort(400, "Discount is required.")
 
-    if not "discount" in coupon or type(coupon["discount"]) != type(int) or type(coupon["discount"]) != type(float):
+    if type(coupon["discount"]) != int and type(coupon["discount"]) != float:
         return abort(400, "Discount is required and should a valid number.")
-
-    if coupon < 0 or len(coupon["discount"]) > 31:
+        
+    if coupon["discount"] < 0 or coupon["discount"] > 31:
         return abort(400, "Discount should be lower than 31.")
 
     db.couponCode.insert_one(coupon)
