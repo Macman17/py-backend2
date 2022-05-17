@@ -151,23 +151,23 @@ def search_by_text(text):
 #Coupon Code Section
 
 #Get Coupon Codes
-@app.get("/api/couponCodes")
+@app.get("/api/couponCode")
 def get_coupon():
 
-    cursor= db.couponCodes.find({})
+    cursor= db.couponCode.find({})
     results= []
 
-    for code in cursor:
-        code["_id"] = str(code["_id"]) 
-        results.append(code)
+    for coupon in cursor:
+        coupon["_id"] = str(coupon["_id"]) 
+        results.append(coupon)
         
     return json.dumps(results)
 
 #Valid Coupon codes
-@app.get("/api/couponCodes/<code>")
+@app.get("/api/couponCode/<code>")
 def get_by_code_coupon(code):
 
-    coupon = db.couponCodes.find_one({"code": code})
+    coupon = db.couponCode.find_one({"code": code})
     if not coupon:
         return abort(400, "Invalid coupon code")
 
@@ -176,7 +176,7 @@ def get_by_code_coupon(code):
     return json.dumps(coupon)
 
 #Post Coupon Code
-@app.route("/api/couponCodes", methods=["post"])
+@app.post("/api/couponCode")
 def save_coupon():
     coupon = request.get_json()
 
